@@ -62,16 +62,6 @@
             background-color: #9ca3af; /* Gray-400 */
             cursor: not-allowed;
         }
-
-        /* CSS for the flashing title effect */
-        .flash-animation {
-            animation: flashTitle 0.8s ease-in-out; /* Animation duration and timing */
-        }
-
-        @keyframes flashTitle {
-            0%, 100% { color: #ffffff; } /* Start and end color (white, hidden) */
-            50% { color: #1f2937; } /* Midpoint color (gray-800, visible) */
-        }
     </style>
 </head>
 <body>
@@ -86,8 +76,8 @@
         </div>
 
         <div class="mb-6">
-            <label for="studentNameInput" class="block text-gray-700 text-lg font-semibold mb-2">학생 이름</label>
-            <input type="text" id="studentNameInput" class="w-full p-4 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition duration-200" placeholder="예: 철수">
+            <label for="studentNameInput" class="block text-gray-700 text-lg font-semibold mb-2">학생 이름 (선택 사항)</label>
+            <input type="text" id="studentNameInput" class="w-full p-4 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition duration-200" placeholder="예: 철수 (이름만 입력)">
         </div>
 
         <div class="mb-6">
@@ -103,18 +93,30 @@
         </div>
 
         <div id="results" class="space-y-6">
+            <!-- Version 3 (간결하고 핵심적인 소견) now comes first -->
             <div class="bg-gray-50 p-6 rounded-lg border border-gray-200">
                 <div class="flex justify-between items-center mb-3">
-                    <h2 class="text-xl font-semibold text-gray-800">👩🏻‍🏫 이 선생님</h2>
+                    <h2 class="text-xl font-semibold text-gray-800">👨🏼‍🏫 간결하고 핵심적인 소견</h2>
+                    <div class="flex items-center">
+                        <button class="copy-button" data-target="version3Output" disabled>복사</button>
+                    </div>
+                </div>
+                <p id="version3Output" class="text-gray-700 whitespace-pre-wrap">여기에 변환된 내용이 표시됩니다.</p>
+            </div>
+            <!-- Version 1 (부드럽고 상세한 소견) -->
+            <div class="bg-gray-50 p-6 rounded-lg border border-gray-200">
+                <div class="flex justify-between items-center mb-3">
+                    <h2 class="text-xl font-semibold text-gray-800">👨‍🏫 부드럽고 상세한 소견</h2>
                     <div class="flex items-center">
                         <button class="copy-button" data-target="version1Output" disabled>복사</button>
                     </div>
                 </div>
                 <p id="version1Output" class="text-gray-700 whitespace-pre-wrap">여기에 변환된 내용이 표시됩니다.</p>
             </div>
+            <!-- Version 2 (정중하고 완곡한 소견) -->
             <div class="bg-gray-50 p-6 rounded-lg border border-gray-200">
                 <div class="flex justify-between items-center mb-3">
-                    <h2 class="text-xl font-semibold text-gray-800">👨🏻‍🏫 정 선생님</h2>
+                    <h2 class="text-xl font-semibold text-gray-800">👨🏻‍🏫 정중하고 완곡한 소견</h2>
                     <div class="flex items-center">
                         <button class="copy-button" data-target="version2Output" disabled>복사</button>
                     </div>
@@ -131,18 +133,18 @@
 
     <script type="module">
         const apiKeyInput = document.getElementById('apiKeyInput');
-        const studentNameInput = document.getElementById('studentNameInput'); // New student name input
+        const studentNameInput = document.getElementById('studentNameInput');
         const userInput = document.getElementById('userInput');
         const transformButton = document.getElementById('transformButton');
         const buttonText = document.getElementById('buttonText');
         const loadingSpinner = document.getElementById('loadingSpinner');
         const version1Output = document.getElementById('version1Output');
         const version2Output = document.getElementById('version2Output');
+        const version3Output = document.getElementById('version3Output');
         const errorMessage = document.getElementById('errorMessage');
         const errorDetail = document.querySelector('#errorMessage .error-detail');
-        const pageTitle = document.getElementById('pageTitle'); // Get reference to the title element
+        const pageTitle = document.getElementById('pageTitle');
 
-        // Get all copy buttons
         const copyButtons = document.querySelectorAll('.copy-button');
 
         /**
@@ -161,23 +163,16 @@
          */
         function copyTextToClipboard(elementId) {
             const textElement = document.getElementById(elementId);
-            // Only proceed if the button is enabled (meaning content is valid for copying)
             if (textElement && !document.querySelector(`[data-target="${elementId}"]`).disabled) {
-                // Create a temporary textarea element to hold the text
                 const tempTextArea = document.createElement('textarea');
                 tempTextArea.value = textElement.textContent;
                 document.body.appendChild(tempTextArea);
-
-                // Select the text and copy it
                 tempTextArea.select();
                 document.execCommand('copy');
-
-                // Remove the temporary textarea
                 document.body.removeChild(tempTextArea);
             }
         }
 
-        // Add event listeners to copy buttons
         copyButtons.forEach(button => {
             button.addEventListener('click', (event) => {
                 const targetId = event.target.dataset.target;
@@ -185,29 +180,22 @@
             });
         });
 
-        // Initially disable copy buttons
         setCopyButtonsDisabled(true);
 
-        // Add keydown event listener to userInput for Enter key
         userInput.addEventListener('keydown', (event) => {
-            if (event.key === 'Enter' && !event.shiftKey) { // Check for Enter key and not Shift+Enter
-                event.preventDefault(); // Prevent default newline behavior
-                transformButton.click(); // Programmatically click the transform button
+            if (event.key === 'Enter' && !event.shiftKey) {
+                event.preventDefault();
+                transformButton.click();
             }
         });
 
         transformButton.addEventListener('click', async () => {
             const userThought = userInput.value.trim();
-            const apiKey = apiKeyInput.value.trim(); // Get API key from input field
+            const apiKey = apiKeyInput.value.trim();
             const studentName = studentNameInput.value.trim(); // Get student name from input field
 
             if (!apiKey) {
                 alert('API 키를 입력해주세요.');
-                return;
-            }
-
-            if (!studentName) {
-                alert('학생 이름을 입력해주세요.');
                 return;
             }
 
@@ -216,33 +204,26 @@
                 return;
             }
 
-            // Add flash animation to the title
-            pageTitle.classList.add('flash-animation');
-            // Remove animation after its duration (0.8s as defined in CSS)
-            setTimeout(() => {
-                pageTitle.classList.remove('flash-animation');
-            }, 800);
-
-
-            // Show loading state and disable buttons
-            buttonText.textContent = '변환 중...';
+            buttonText.textContent = '생성 중...';
             loadingSpinner.classList.remove('hidden');
             transformButton.disabled = true;
-            setCopyButtonsDisabled(true); // Disable copy buttons during loading
-            version1Output.textContent = '변환 중...';
-            version2Output.textContent = '변환 중...';
+            setCopyButtonsDisabled(true);
+            version1Output.textContent = '생성 중...';
+            version2Output.textContent = '생성 중...';
+            version3Output.textContent = '생성 중...';
             errorMessage.classList.add('hidden');
-            errorDetail.textContent = '변환 중 문제가 발생했습니다. API 키를 확인하거나 잠시 후 다시 시도해주세요.'; // Reset error message
+            errorDetail.textContent = '생성 중 문제가 발생했습니다. API 키를 확인하거나 잠시 후 다시 시도해주세요.';
 
-            try {
-                // Construct the prompt for the LLM, now including studentName
-                const prompt = `당신은 초등학생 학부모와의 소통에 능숙한 베테랑 초등학교 교사입니다. 학부모가 자녀에 대해 기분 나쁘거나 민원을 넣지 않도록, '나는 항상 네 자식을 신경쓴다, 관심있다, 좋아한다'는 말이 깔려있어야 합니다. '내가 말하는 모든 건 네 자식의 성장을 위해 돕고 싶어서 하는 말이야' 라는 쿠션이 있으면 좋습니다. **변환된 내용에 반드시 학생 이름(${studentName})을 포함하여 'OO'와 같은 추상적인 표현 대신 사용해주세요.**
+            let prompt;
+            if (studentName) {
+                prompt = `당신은 초등학생 학부모와의 소통에 능숙한 베테랑 초등학교 교사입니다. 학부모가 자녀에 대해 기분 나쁘거나 민원을 넣지 않도록, '나는 항상 네 자식을 신경쓴다, 관심있다, 좋아한다'는 말이 깔려있어야 합니다. '내가 말하는 모든 건 네 자식의 성장을 위해 돕고 싶어서 하는 말이야' 라는 쿠션이 있으면 좋습니다. **변환된 내용에 반드시 학생 이름(${studentName})을 포함하여 'OO'와 같은 추상적인 표현 대신 사용해주세요.**
 
 사용자가 "선생님의 속마음" 또는 "직설적인 표현"을 입력하면, 
-이를 다음 두 가지 스타일로 변환해서 반환하세요:
+이를 다음 세 가지 스타일로 변환해서 반환하세요:
 
 1. 버전 1: 학생 칭찬을 먼저 깔아주고, 마지막에 아쉬운 점과 더 노력하면 좋은 점을 부드럽게 돌려 말하는 표현 (학부모와의 일반적인 대화, 알림장 등에 자연스럽게 어울리는 수준)
 2. 버전 2: 학생 칭찬을 먼저 깔아주고, 마지막에 아쉬운 점과 더 노력하면 좋은 점을 더 정중하고 고도로 완곡하게 돌려 말하는 표현 (직접적인 표현을 피하면서도 의도는 전달되도록 돌려 말하는 방식)
+3. 버전 3: 학생 칭찬을 곁들이고 긍정적인 어조를 유지하되, 핵심적인 내용을 간결하고 명확하게 전달하는 표현 (구구절절하지 않고 요점만 전달하는 스타일)
 
 ※ 너무 짧거나 성의 없는 표현은 피하고, 자연스러운 학부모 소통 상황에서 쓸 수 있게 표현하세요.
 
@@ -250,18 +231,45 @@
 "얘가 수업 시간에 너무 떠들어요."
 → 버전 1: 우리 ${studentName}은 발표도 잘하고 친구들과도 활발하게 어울리는 모습이 참 예쁩니다. 다만, 가끔 수업 중 집중하기 어려워하는 모습이 보여서 조금 더 차분하게 참여한다면 더욱 멋진 학생이 될 수 있을 것 같아요. ${studentName}의 성장을 위해 함께 노력 부탁드립니다.
 → 버전 2: ${studentName}이 학교생활에 잘 적응하며 친구들과도 밝게 지내는 모습에 늘 감사드립니다. 다만, 수업 시간 중 학습 분위기 조성을 위해 ${studentName}이 조금 더 집중력을 발휘할 수 있도록 가정에서도 관심과 격려를 부탁드립니다. ${studentName}의 밝은 미래를 위해 저 또한 최선을 다해 지도하겠습니다.
+→ 버전 3: ${studentName}은 에너지가 넘치고 친구들과 잘 어울립니다. 수업 시간에 조금 더 집중한다면 학습 효과가 더욱 좋아질 것입니다. 가정에서도 관심 부탁드립니다.
 
 이 구조를 계속 반복합니다.
 
 사용자 입력: "${userThought}"
 → 버전 1:
-→ 버전 2:`;
+→ 버전 2:
+→ 버전 3:`;
+            } else {
+                prompt = `당신은 초등학생 학부모와의 소통에 능숙한 베테랑 초등학교 교사입니다. 학부모가 자녀에 대해 기분 나쁘거나 민원을 넣지 않도록, '나는 항상 네 자식을 신경쓴다, 관심있다, 좋아한다'는 말이 깔려있어야 합니다. '내가 말하는 모든 건 네 자식의 성장을 위해 돕고 싶어서 하는 말이야' 라는 쿠션이 있으면 좋습니다. **학생 이름이 제공되지 않았으므로, 변환된 내용에 특정 학생 이름 대신 '우리 학생은', '아이는', '해당 학생은'과 같은 일반적인 표현을 사용해주세요.**
 
+사용자가 "선생님의 속마음" 또는 "직설적인 표현"을 입력하면, 
+이를 다음 세 가지 스타일로 변환해서 반환하세요:
+
+1. 버전 1: 학생 칭찬을 먼저 깔아주고, 마지막에 아쉬운 점과 더 노력하면 좋은 점을 부드럽게 돌려 말하는 표현 (학부모와의 일반적인 대화, 알림장 등에 자연스럽게 어울리는 수준)
+2. 버전 2: 학생 칭찬을 먼저 깔아주고, 마지막에 아쉬운 점과 더 노력하면 좋은 점을 더 정중하고 고도로 완곡하게 돌려 말하는 표현 (직접적인 표현을 피하면서도 의도는 전달되도록 돌려 말하는 방식)
+3. 버전 3: 학생 칭찬을 곁들이고 긍정적인 어조를 유지하되, 핵심적인 내용을 간결하고 명확하게 전달하는 표현 (구구절절하지 않고 요점만 전달하는 스타일)
+
+※ 너무 짧거나 성의 없는 표현은 피하고, 자연스러운 학부모 소통 상황에서 쓸 수 있게 표현하세요.
+
+사용자 입력 예시:
+"얘가 수업 시간에 너무 떠들어요."
+→ 버전 1: 우리 학생은 발표도 잘하고 친구들과도 활발하게 어울리는 모습이 참 예쁩니다. 다만, 가끔 수업 중 집중하기 어려워하는 모습이 보여서 조금 더 차분하게 참여한다면 더욱 멋진 학생이 될 수 있을 것 같아요. 학생의 성장을 위해 함께 노력 부탁드립니다.
+→ 버전 2: 우리 학생이 학교생활에 잘 적응하며 친구들과도 밝게 지내는 모습에 늘 감사드립니다. 다만, 수업 시간 중 학습 분위기 조성을 위해 학생이 조금 더 집중력을 발휘할 수 있도록 가정에서도 관심과 격려를 부탁드립니다. 학생의 밝은 미래를 위해 저 또한 최선을 다해 지도하겠습니다.
+→ 버전 3: 우리 학생은 에너지가 넘치고 친구들과 잘 어울립니다. 수업 시간에 조금 더 집중한다면 학습 효과가 더욱 좋아질 것입니다. 가정에서도 관심 부탁드립니다.
+
+이 구조를 계속 반복합니다.
+
+사용자 입력: "${userThought}"
+→ 버전 1:
+→ 버전 2:
+→ 버전 3:`;
+            }
+
+            try {
                 let chatHistory = [];
                 chatHistory.push({ role: "user", parts: [{ text: prompt }] });
 
                 const payload = { contents: chatHistory };
-                // Use the API key from the input field
                 const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`;
 
                 const response = await fetch(apiUrl, {
@@ -270,65 +278,66 @@
                     body: JSON.stringify(payload)
                 });
 
-                // Check if the HTTP response was successful
                 if (!response.ok) {
                     const errorResponseText = await response.text();
                     console.error('API 응답 오류 상세:', errorResponseText);
                     throw new Error(`HTTP 오류! 상태: ${response.status}, 메시지: ${errorResponseText.substring(0, 100)}...`);
                 }
 
-                // Get the raw response text first to handle potential empty/malformed JSON
                 const responseText = await response.text();
                 if (!responseText) {
                     throw new Error('API 응답이 비어 있습니다.');
                 }
 
-                const result = JSON.parse(responseText); // Manually parse the text as JSON
+                const result = JSON.parse(responseText);
 
                 if (result.candidates && result.candidates.length > 0 &&
                     result.candidates[0].content && result.candidates[0].content.parts &&
                     result.candidates[0].content.parts.length > 0) {
                     const text = result.candidates[0].content.parts[0].text;
-                    console.log("Raw LLM response text:", text); // Log raw response for debugging
+                    console.log("Raw LLM response text:", text);
                     
-                    // Parse the response text, looking for "→ 버전 1:" and "→ 버전 2:"
                     const lines = text.split('\n').filter(line => line.trim() !== '');
-                    let version1 = '변환 실패: 내용을 찾을 수 없습니다.';
-                    let version2 = '변환 실패: 내용을 찾을 수 없습니다.';
+                    let version1 = '생성 실패: 내용을 찾을 수 없습니다.';
+                    let version2 = '생성 실패: 내용을 찾을 수 없습니다.';
+                    let version3 = '생성 실패: 내용을 찾을 수 없습니다.';
 
                     for (const line of lines) {
                         if (line.startsWith('→ 버전 1:')) {
                             version1 = line.substring('→ 버전 1:'.length).trim();
                         } else if (line.startsWith('→ 버전 2:')) {
                             version2 = line.substring('→ 버전 2:'.length).trim();
+                        } else if (line.startsWith('→ 버전 3:')) {
+                            version3 = line.substring('→ 버전 3:'.length).trim();
                         }
                     }
 
                     version1Output.textContent = version1;
                     version2Output.textContent = version2;
+                    version3Output.textContent = version3;
 
-                    // Enable copy buttons if conversion was successful
                     setCopyButtonsDisabled(false);
 
                 } else {
                     console.error('API 응답 구조가 예상과 다릅니다:', result);
                     errorMessage.classList.remove('hidden');
                     errorDetail.textContent = 'API 응답 구조가 예상과 다릅니다.';
-                    version1Output.textContent = '변환 실패';
-                    version2Output.textContent = '변환 실패';
-                    setCopyButtonsDisabled(true); // Keep disabled on conversion failure
+                    version1Output.textContent = '생성 실패';
+                    version2Output.textContent = '생성 실패';
+                    version3Output.textContent = '생성 실패';
+                    setCopyButtonsDisabled(true);
                 }
 
             } catch (error) {
                 console.error('API 호출 중 오류 발생:', error);
                 errorMessage.classList.remove('hidden');
                 errorDetail.textContent = `오류 내용: ${error.message || '알 수 없는 오류'}. API 키를 확인하거나 잠시 후 다시 시도해 주세요.`;
-                version1Output.textContent = '변환 실패';
-                version2Output.textContent = '변환 실패';
-                setCopyButtonsDisabled(true); // Keep disabled on API call error
+                version1Output.textContent = '생성 실패';
+                version2Output.textContent = '생성 실패';
+                version3Output.textContent = '생성 실패';
+                setCopyButtonsDisabled(true);
             } finally {
-                // Reset loading state
-                buttonText.textContent = '변환하기';
+                buttonText.textContent = '생성하기';
                 loadingSpinner.classList.add('hidden');
                 transformButton.disabled = false;
             }
